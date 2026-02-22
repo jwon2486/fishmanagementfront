@@ -5,128 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>어류 재고 관리</title>
 
-  <!-- Optional: if you have your premium css, keep this link -->
+  <!-- 분리된 CSS -->
+  <link rel="stylesheet" href="css/stylecss.css">
+
+  <!-- Optional premium css -->
   <!-- <link rel="stylesheet" href="style_premium.css" /> -->
-
-  <style>
-    :root { --bg:#f6f7fb; --card:#fff; --line:rgba(0,0,0,.08); --text:#111; --muted:rgba(0,0,0,.6); }
-    *{ box-sizing:border-box; }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, sans-serif; background:var(--bg); color:var(--text); }
-    header{ position:sticky; top:0; z-index:50; background:rgba(246,247,251,.9); backdrop-filter: blur(8px); border-bottom:1px solid var(--line); }
-    .wrap{ max-width:1100px; margin:0 auto; padding:16px; }
-    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .title{ font-size:18px; font-weight:800; }
-    .sub{ font-size:12px; color:var(--muted); margin-top:2px; }
-    .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow: 0 10px 30px rgba(0,0,0,.06); }
-    .pad{ padding:14px; }
-    .btn-row{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
-    .action-btn{ border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
-    .action-btn:hover{ transform: translateY(-1px); }
-    .save-btn{ border-color: rgba(46,204,113,.4); }
-    .danger-btn{ border-color: rgba(231,76,60,.45); }
-    .ghost{ color:var(--muted); font-weight:600; }
-    select, input{ border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:#fff; }
-    input[type="number"]{ width: 120px; }
-    input[type="text"]{ width: 160px; }
-    table{ width:100%; border-collapse:collapse; margin-top:10px; }
-    thead th{ text-align:left; font-size:13px; color:var(--muted); border-bottom:1px solid var(--line); padding:10px 8px; }
-    tbody td{ border-bottom:1px solid var(--line); padding:10px 8px; vertical-align:middle; }
-    tbody tr:hover{ background: rgba(0,0,0,.02); }
-    .amount-cell{ text-align:right; font-variant-numeric: tabular-nums; }
-    .right{ text-align:right; }
-    .dirty-dot{ display:inline-block; width:8px; height:8px; border-radius:99px; background:#f39c12; margin-right:6px; vertical-align:middle; }
-    .muted{ color:var(--muted); }
-
-    /* Toast */
-    .toast-container{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 9999;
-    }
-    .toast{
-      min-width: 260px;
-      max-width: 420px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,.18);
-      background: #fff;
-      border: 1px solid rgba(0,0,0,.08);
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      animation: toastIn .18s ease-out;
-    }
-    .toast .toast-title{ font-weight: 800; font-size: 14px; }
-    .toast .toast-msg{ font-size: 13px; opacity: .9; margin-top: 2px; line-height: 1.35; }
-    .toast.success{ border-left: 6px solid #2ecc71; }
-    .toast.error{ border-left: 6px solid #e74c3c; }
-    .toast.info{ border-left: 6px solid #3498db; }
-    .toast .toast-close{
-      margin-left: auto;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 16px;
-      opacity: .55;
-    }
-    .toast .toast-close:hover{ opacity: .9; }
-    @keyframes toastIn{
-      from{ transform: translateY(8px); opacity: 0; }
-      to{ transform: translateY(0); opacity: 1; }
-    }
-
-    /* Popup modal */
-    .popup-overlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-    }
-    .popup-modal{
-      width: min(520px, calc(100vw - 24px));
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 12px 40px rgba(0,0,0,.25);
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,.08);
-    }
-    .popup-header{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(0,0,0,.08);
-    }
-    .popup-title{ font-weight: 900; font-size: 16px; }
-    .popup-close{
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 22px;
-      line-height: 1;
-      opacity: .6;
-    }
-    .popup-close:hover{ opacity: 1; }
-    .popup-message{
-      padding: 16px;
-      font-size: 14px;
-      line-height: 1.5;
-      white-space: pre-wrap;
-    }
-    .popup-actions{
-      padding: 0 16px 16px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-  </style>
 </head>
 
 <body>
@@ -192,10 +75,8 @@
   </section>
 </main>
 
-<!-- Toast Container -->
 <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-<!-- Popup Modal -->
 <div id="popup-overlay" class="popup-overlay" hidden>
   <div class="popup-modal" role="dialog" aria-modal="true" aria-labelledby="popup-title">
     <div class="popup-header">
@@ -209,6 +90,9 @@
   </div>
 </div>
 
-<script src="app.js"></script>
+<!-- JS -->
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
