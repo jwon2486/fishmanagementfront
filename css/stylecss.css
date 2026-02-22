@@ -250,6 +250,10 @@ body{
 }
 .hint{font-size:12px;color:var(--muted);background:#f8fafc;border:1px dashed #dbe6f3;padding:10px 12px;border-radius:12px}
 
+/* 페이지 탭 숨김 처리 */
+.page { display:block; }
+.page.is-hidden { display:none !important; }
+
 /* responsive */
 @media (max-width:1100px){
   .cards{grid-template-columns:repeat(2, minmax(180px, 1fr))}

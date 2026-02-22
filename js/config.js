@@ -1,15 +1,8 @@
 // js/config.js
-// API 주소 중앙 관리
+let API_BASE_URL = "https://fishmanage.onrender.com"; // 배포 기본(실 백엔드)
 
-let API_BASE_URL = "https://fishmanage.onrender.com"; // ✅ 배포 기본(실 백엔드)
-
-// Live Server(로컬)로 열었을 때는 로컬 Flask로 자동 전환
-if (location.hostname === "127.0.0.1" || location.hostname === "localhost") {
-  API_BASE_URL = "http://127.0.0.1:5000";
-}
-
-// 주소창으로 강제 override 가능(선택)
-// 예: https://프론트주소/?api=https://fishmanage.onrender.com
+// 로컬에서 열어도 기본은 그대로 Render 사용
+// (로컬 백엔드를 쓰고 싶으면 주소창 ?api= 로 바꿀 수 있게 유지)
 const override = new URLSearchParams(location.search).get("api");
 if (override) API_BASE_URL = override.replace(/\/$/, "");
 
