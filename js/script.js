@@ -19,11 +19,17 @@ function fmtMoney(v) {
   return n(v).toLocaleString();
 }
 
+function $(id) {
+  return document.getElementById(id);
+}
+
 // ===========================
 // Toast + Popup
 // ===========================
 function showToast(type, title, message, timeoutMs = 3000) {
-  const container = document.getElementById("toast-container");
+  const container = $("toast-container");
+  if (!container) return;
+
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
 
@@ -35,7 +41,7 @@ function showToast(type, title, message, timeoutMs = 3000) {
     <button class="toast-close" aria-label="닫기">×</button>
   `;
 
-  toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
+  toast.querySelector(".toast-close")?.addEventListener("click", () => toast.remove());
   container.appendChild(toast);
 
   if (timeoutMs > 0) {
@@ -46,15 +52,21 @@ function showToast(type, title, message, timeoutMs = 3000) {
 }
 
 function showPopup(title, message) {
-  const overlay = document.getElementById("popup-overlay");
-  document.getElementById("popup-title").textContent = title;
-  document.getElementById("popup-message").textContent = message;
+  const overlay = $("popup-overlay");
+  const titleEl = $("popup-title");
+  const msgEl = $("popup-message");
+  const okBtn = $("popup-ok");
+  if (!overlay || !titleEl || !msgEl || !okBtn) return;
+
+  titleEl.textContent = title;
+  msgEl.textContent = message;
   overlay.hidden = false;
-  document.getElementById("popup-ok").focus();
+  okBtn.focus();
 }
 
 function closePopup() {
-  document.getElementById("popup-overlay").hidden = true;
+  const overlay = $("popup-overlay");
+  if (overlay) overlay.hidden = true;
 }
 
 function notifyResult(ok, context, detail) {
@@ -68,16 +80,42 @@ function notifyResult(ok, context, detail) {
   }
 }
 
-// Popup events
-document.getElementById("popup-close").addEventListener("click", closePopup);
-document.getElementById("popup-ok").addEventListener("click", closePopup);
-document.getElementById("popup-overlay").addEventListener("click", (e) => {
-  if (e.target.id === "popup-overlay") closePopup();
-});
-window.addEventListener("keydown", (e) => {
-  const overlay = document.getElementById("popup-overlay");
-  if (!overlay.hidden && e.key === "Escape") closePopup();
-});
+// ===========================
+// Page routing (sidebar tabs)
+// ===========================
+function setupPageRouting() {
+  const navItems = document.querySelectorAll(".nav__item");
+  const pages = document.querySelectorAll("[data-page-view]");
+  if (!navItems.length || !pages.length) return;
+
+  function showPage(pageName) {
+    // active 메뉴 표시
+    navItems.forEach((a) => {
+      a.classList.toggle("nav__item--active", a.dataset.page === pageName);
+    });
+
+    // 페이지 표시/숨김
+    pages.forEach((p) => {
+      p.classList.toggle("is-hidden", p.dataset.pageView !== pageName);
+    });
+
+    // inventory 탭 진입 시 로드
+    if (pageName === "inventory") {
+      if (typeof loadInventory === "function") loadInventory();
+    }
+  }
+
+  navItems.forEach((a) => {
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      const page = a.dataset.page;
+      if (page) showPage(page);
+    });
+  });
+
+  const current = document.querySelector(".nav__item.nav__item--active")?.dataset.page || "dashboard";
+  showPage(current);
+}
 
 // ===========================
 // Dirty tracking
@@ -92,7 +130,8 @@ function setDirty(id, isDirty) {
 }
 
 function renderDirtyCount() {
-  const el = document.getElementById("dirty-count");
+  const el = $("dirty-count");
+  if (!el) return;
   const nDirty = dirtyRows.size;
   el.textContent = nDirty ? `● 변경된 행: ${nDirty}개` : "";
 }
@@ -127,25 +166,34 @@ async function autosaveTick() {
 
 function startAutosave() {
   stopAutosave();
-  const mins = parseInt(document.getElementById("sel-autosave-min").value, 10);
+  const sel = $("sel-autosave-min");
+  if (!sel) return;
+
+  const mins = parseInt(sel.value, 10);
   const ms = mins * 60 * 1000;
   autosaveTimer = setInterval(autosaveTick, ms);
 }
 
 function saveAutosaveSettings() {
-  const enabled = document.getElementById("chk-autosave").checked;
-  const mins = document.getElementById("sel-autosave-min").value;
-  localStorage.setItem(AUTOSAVE_KEY, enabled ? "true" : "false");
-  localStorage.setItem(AUTOSAVE_MIN_KEY, mins);
+  const chk = $("chk-autosave");
+  const sel = $("sel-autosave-min");
+  if (!chk || !sel) return;
+
+  localStorage.setItem(AUTOSAVE_KEY, chk.checked ? "true" : "false");
+  localStorage.setItem(AUTOSAVE_MIN_KEY, sel.value);
 }
 
 function loadAutosaveSettings() {
+  const chk = $("chk-autosave");
+  const sel = $("sel-autosave-min");
+  if (!chk || !sel) return;
+
   const enabledRaw = localStorage.getItem(AUTOSAVE_KEY);
   const enabled = enabledRaw === "true"; // default OFF
   const mins = localStorage.getItem(AUTOSAVE_MIN_KEY) || "30";
 
-  document.getElementById("chk-autosave").checked = enabled;
-  document.getElementById("sel-autosave-min").value = mins;
+  chk.checked = enabled;
+  sel.value = mins;
 
   if (enabled) startAutosave();
   else stopAutosave();
@@ -176,18 +224,25 @@ function attachRowHandlers(tr) {
     // live amount preview
     const qty = n(tr.querySelector('input[data-k="qty"]').value);
     const up = n(tr.querySelector('input[data-k="unit_price"]').value);
-    tr.querySelector(".amount-cell").textContent = fmtMoney(qty * up);
+    const cell = tr.querySelector(".amount-cell");
+    if (cell) cell.textContent = fmtMoney(qty * up);
   });
 }
 
 async function loadInventory() {
-  const status = document.getElementById("status-text");
-  status.textContent = "불러오는 중…";
+  const status = $("status-text");
+  if (status) status.textContent = "불러오는 중…";
 
   try {
-    const rows = await getData("/api/inventory"); // ✅ util 경유
+    // util.js의 getData 사용
+    const rows = await getData("/api/inventory");
 
-    const tbody = document.getElementById("inv-body");
+    const tbody = $("inv-body");
+    if (!tbody) {
+      if (status) status.textContent = "재고 테이블 영역(inv-body)이 없습니다.";
+      return;
+    }
+
     tbody.innerHTML = "";
 
     for (const r of rows) {
@@ -215,26 +270,32 @@ async function loadInventory() {
       attachRowHandlers(tr);
     }
 
-    status.textContent = `총 ${rows.length}건`;
+    if (status) status.textContent = `총 ${rows.length}건`;
   } catch (e) {
-    status.textContent = "로드 실패";
+    if (status) status.textContent = "로드 실패";
     notifyResult(false, "목록 조회", e?.message || String(e));
   }
 }
 
 async function addRow() {
-  const fish = document.getElementById("in-fish").value.trim();
-  const size = document.getElementById("in-size").value.trim();
-  const qty = n(document.getElementById("in-qty").value);
-  const unit_price = n(document.getElementById("in-unit").value);
+  const fishEl = $("in-fish");
+  const sizeEl = $("in-size");
+  const qtyEl = $("in-qty");
+  const unitEl = $("in-unit");
+  if (!fishEl || !sizeEl || !qtyEl || !unitEl) return;
+
+  const fish = fishEl.value.trim();
+  const size = sizeEl.value.trim();
+  const qty = n(qtyEl.value);
+  const unit_price = n(unitEl.value);
 
   try {
-    await postData("/api/inventory", { fish, size, qty, unit_price }); // ✅ util 경유
+    await postData("/api/inventory", { fish, size, qty, unit_price });
 
-    document.getElementById("in-fish").value = "";
-    document.getElementById("in-size").value = "";
-    document.getElementById("in-qty").value = "";
-    document.getElementById("in-unit").value = "";
+    fishEl.value = "";
+    sizeEl.value = "";
+    qtyEl.value = "";
+    unitEl.value = "";
 
     notifyResult(true, "행 추가", "");
     await loadInventory();
@@ -248,7 +309,7 @@ async function saveRow(tr, fromAutosave = false) {
   const payload = getRowPayload(tr);
 
   try {
-    await putData(`/api/inventory/${id}`, payload); // ✅ util 경유
+    await putData(`/api/inventory/${id}`, payload);
     setDirty(id, false);
 
     notifyResult(true, fromAutosave ? `자동저장(개별, ID:${id})` : `개별 저장(ID:${id})`, "");
@@ -266,7 +327,7 @@ async function saveRow(tr, fromAutosave = false) {
 
 async function deleteRow(id) {
   try {
-    await deleteData(`/api/inventory/${id}`); // ✅ util 경유
+    await deleteData(`/api/inventory/${id}`);
     setDirty(id, false);
 
     notifyResult(true, `행 삭제(ID:${id})`, "");
@@ -294,7 +355,7 @@ async function saveAllDirty(fromAutosave = false) {
   }
 
   try {
-    await postData("/api/inventory/bulk", { items }); // ✅ util 경유
+    await postData("/api/inventory/bulk", { items });
 
     dirtyRows.clear();
     renderDirtyCount();
@@ -309,67 +370,90 @@ async function saveAllDirty(fromAutosave = false) {
 }
 
 // ===========================
-// Event wiring
+// Event wiring (DOM ready)
 // ===========================
-document.getElementById("btn-add").addEventListener("click", addRow);
-document.getElementById("btn-save-all").addEventListener("click", async () => {
-  if (isSaving) return;
-  isSaving = true;
-  try {
-    await saveAllDirty(false);
-  } finally {
-    isSaving = false;
-  }
-});
-document.getElementById("btn-reload").addEventListener("click", loadInventory);
+function setupEvents() {
+  // Popup events
+  $("popup-close")?.addEventListener("click", closePopup);
+  $("popup-ok")?.addEventListener("click", closePopup);
+  $("popup-overlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "popup-overlay") closePopup();
+  });
+  window.addEventListener("keydown", (e) => {
+    const overlay = $("popup-overlay");
+    if (overlay && !overlay.hidden && e.key === "Escape") closePopup();
+  });
 
-document.getElementById("inv-body").addEventListener("click", async (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn) return;
+  // CRUD 버튼
+  $("btn-add")?.addEventListener("click", addRow);
 
-  const tr = btn.closest("tr");
-  const id = tr.dataset.id;
-
-  if (btn.dataset.act === "delete") {
-    if (!confirm("정말 삭제할까요?")) return;
-    await deleteRow(id);
-  }
-
-  if (btn.dataset.act === "save") {
+  $("btn-save-all")?.addEventListener("click", async () => {
     if (isSaving) return;
     isSaving = true;
     try {
-      await saveRow(tr, false);
+      await saveAllDirty(false);
     } finally {
       isSaving = false;
     }
-  }
-});
+  });
 
-// Autosave UI events
-document.getElementById("chk-autosave").addEventListener("change", (e) => {
-  saveAutosaveSettings();
-  if (e.target.checked) startAutosave();
-  else stopAutosave();
-});
+  $("btn-reload")?.addEventListener("click", loadInventory);
 
-document.getElementById("sel-autosave-min").addEventListener("change", () => {
-  saveAutosaveSettings();
-  if (document.getElementById("chk-autosave").checked) {
-    startAutosave();
-  }
-});
+  // 테이블 액션(이벤트 위임)
+  $("inv-body")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
 
-// Warn if leaving with unsaved changes
-window.addEventListener("beforeunload", (e) => {
-  if (dirtyRows.size > 0) {
-    e.preventDefault();
-    e.returnValue = "";
-  }
-});
+    const tr = btn.closest("tr");
+    const id = tr?.dataset?.id;
+    if (!tr || !id) return;
+
+    if (btn.dataset.act === "delete") {
+      if (!confirm("정말 삭제할까요?")) return;
+      await deleteRow(id);
+    }
+
+    if (btn.dataset.act === "save") {
+      if (isSaving) return;
+      isSaving = true;
+      try {
+        await saveRow(tr, false);
+      } finally {
+        isSaving = false;
+      }
+    }
+  });
+
+  // Autosave
+  $("chk-autosave")?.addEventListener("change", (e) => {
+    saveAutosaveSettings();
+    if (e.target.checked) startAutosave();
+    else stopAutosave();
+  });
+
+  $("sel-autosave-min")?.addEventListener("change", () => {
+    saveAutosaveSettings();
+    if ($("chk-autosave")?.checked) startAutosave();
+  });
+
+  // leaving warning
+  window.addEventListener("beforeunload", (e) => {
+    if (dirtyRows.size > 0) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+}
 
 // Init
 document.addEventListener("DOMContentLoaded", async () => {
-  loadAutosaveSettings(); // default OFF
-  await loadInventory();
+  setupPageRouting();
+  setupEvents();
+  loadAutosaveSettings();
+
+  // 초기 탭이 inventory면 로드
+  const current = document.querySelector(".nav__item.nav__item--active")?.dataset.page;
+  if (current === "inventory") {
+    await loadInventory();
+  }
 });

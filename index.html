@@ -1,98 +1,274 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>어류 재고 관리</title>
-
-  <!-- 분리된 CSS -->
-  <link rel="stylesheet" href="css/stylecss.css">
-
-  <!-- Optional premium css -->
-  <!-- <link rel="stylesheet" href="style_premium.css" /> -->
+  <title>수산물 재고관리</title>
+  <link rel="stylesheet" href="css/stylecss.css" />
 </head>
-
 <body>
-<header>
-  <div class="wrap topbar">
-    <div>
-      <div class="title">어류 재고 관리</div>
-      <div class="sub">어류 / 사이즈 / 수량 / 단가 / 금액(자동계산) · 개별저장/일괄저장/자동저장</div>
-    </div>
-    <div class="ghost">v1</div>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="card pad">
-    <div class="btn-row" style="justify-content:space-between;">
-      <div class="btn-row">
-        <button class="action-btn save-btn" id="btn-save-all">일괄 저장</button>
-        <button class="action-btn" id="btn-reload">새로고침</button>
-
-        <label style="margin-left:12px; display:flex; align-items:center; gap:6px;">
-          <input type="checkbox" id="chk-autosave"> 자동저장
-        </label>
-
-        <select id="sel-autosave-min">
-          <option value="10">10분</option>
-          <option value="30" selected>30분</option>
-          <option value="60">60분</option>
-        </select>
-
-        <span id="dirty-count" class="muted" style="margin-left:10px;"></span>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo">FM</div>
+        <div class="brand__text">
+          <div class="brand__name">FishManage</div>
+          <div class="brand__sub">재고관리 시스템</div>
+        </div>
       </div>
-      <div class="muted" id="status-text"></div>
-    </div>
 
-    <table id="inv-table">
-      <thead>
-        <tr>
-          <th style="width:32px;"></th>
-          <th>어류</th>
-          <th>사이즈</th>
-          <th class="right">수량</th>
-          <th class="right">단가</th>
-          <th class="right">금액</th>
-          <th>작업</th>
-        </tr>
-        <tr>
-          <th></th>
-          <th><input id="in-fish" type="text" placeholder="예: 고등어"></th>
-          <th><input id="in-size" type="text" placeholder="예: L/2kg"></th>
-          <th class="right"><input id="in-qty" type="number" step="0.01" placeholder="0"></th>
-          <th class="right"><input id="in-unit" type="number" step="0.01" placeholder="0"></th>
-          <th class="right muted">자동</th>
-          <th><button class="action-btn save-btn" id="btn-add">추가</button></th>
-        </tr>
-      </thead>
-      <tbody id="inv-body"></tbody>
-    </table>
+      <div class="profile">
+        <div class="profile__avatar" aria-hidden="true"></div>
+        <div class="profile__meta">
+          <div class="profile__name" id="userName">총괄동</div>
+          <div class="profile__dept" id="userDept">수산사업부</div>
+          <div class="profile__status">
+            <span class="dot dot--ok"></span> 온라인
+          </div>
+        </div>
+      </div>
 
-    <div class="muted" style="margin-top:10px;">
-      • 금액은 <b>수량 × 단가</b>로 자동 계산됩니다. &nbsp;• 자동저장 설정은 이 브라우저에 저장됩니다(기본 OFF).
-    </div>
-  </section>
-</main>
+      <nav class="nav">
+        <a class="nav__item nav__item--active" href="#" data-page="dashboard">
+          <span class="nav__icon" aria-hidden="true">🏠</span> 대시보드
+        </a>
+        <a class="nav__item" href="#" data-page="inventory">
+          <span class="nav__icon" aria-hidden="true">📦</span> 재고현황
+        </a>
+        <a class="nav__item" href="#" data-page="history">
+          <span class="nav__icon" aria-hidden="true">🧾</span> 입출고이력
+        </a>
+        <a class="nav__item" href="#" data-page="items">
+          <span class="nav__icon" aria-hidden="true">🧩</span> 품목관리
+        </a>
+        <a class="nav__item" href="#" data-page="settings">
+          <span class="nav__icon" aria-hidden="true">⚙️</span> 설정
+        </a>
+      </nav>
 
-<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+      <div class="sidebar__footer">
+        <div class="ver">v0.1</div>
+      </div>
+    </aside>
 
-<div id="popup-overlay" class="popup-overlay" hidden>
-  <div class="popup-modal" role="dialog" aria-modal="true" aria-labelledby="popup-title">
-    <div class="popup-header">
-      <div id="popup-title" class="popup-title">알림</div>
-      <button id="popup-close" class="popup-close" aria-label="닫기">×</button>
-    </div>
-    <div id="popup-message" class="popup-message"></div>
-    <div class="popup-actions">
-      <button id="popup-ok" class="action-btn save-btn">확인</button>
+    <!-- Main -->
+    <main class="main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="topbar__menu" type="button" aria-label="메뉴">☰</button>
+
+        <div class="search">
+          <input id="globalSearch" class="search__input" type="text"
+                 placeholder="품목/거래처/LOT/바코드 검색" autocomplete="off" />
+          <button id="searchBtn" class="search__btn" type="button">검색</button>
+        </div>
+
+        <div class="topbar__actions">
+          <button id="quickInBtn" class="btn btn--primary" type="button">+ 입고</button>
+          <button id="quickOutBtn" class="btn btn--ghost" type="button">+ 출고</button>
+          <button id="bellBtn" class="icon-btn" type="button" aria-label="알림">🔔</button>
+          <button id="meBtn" class="icon-btn" type="button" aria-label="내 정보">👤</button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <section class="content">
+
+        <!-- Dashboard Page -->
+        <section class="page" data-page-view="dashboard">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">대시보드</h1>
+              <p class="page-subtitle">오늘 재고 현황과 주요 알림을 확인하세요.</p>
+            </div>
+
+            <div class="filters">
+              <label class="field">
+                <span class="field__label">기준일</span>
+                <input id="baseDate" class="field__input" type="date" />
+              </label>
+
+              <label class="field">
+                <span class="field__label">상태</span>
+                <select id="statusFilter" class="field__select">
+                  <option value="ALL">전체</option>
+                  <option value="OK">정상</option>
+                  <option value="WARN">주의</option>
+                  <option value="DANGER">위험</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="cards">
+            <div class="card">
+              <div class="card__label">총 품목</div>
+              <div class="card__value" id="statItems">0</div>
+            </div>
+            <div class="card">
+              <div class="card__label">안전재고 미달</div>
+              <div class="card__value" id="statLow">0</div>
+            </div>
+            <div class="card">
+              <div class="card__label">오늘 입고 합계</div>
+              <div class="card__value" id="statIn">0</div>
+            </div>
+            <div class="card">
+              <div class="card__label">오늘 출고 합계</div>
+              <div class="card__value" id="statOut">0</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head">
+              <div class="panel__title">안내</div>
+              <div class="panel__meta">재고 CRUD는 “재고현황” 탭에서 관리합니다.</div>
+            </div>
+            <div style="padding:14px;color:#6b7785;">
+              좌측 메뉴에서 <b>재고현황</b>을 클릭하면 재고 목록을 불러오고, 추가/수정/삭제/일괄저장을 할 수 있습니다.
+            </div>
+          </div>
+        </section>
+
+        <!-- Inventory Page (CRUD) -->
+        <section class="page is-hidden" data-page-view="inventory">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">재고현황</h1>
+              <p class="page-subtitle">품목별 재고를 추가/수정/삭제하고 일괄 저장할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__head">
+              <div class="panel__title">재고 관리</div>
+              <div class="panel__meta" id="status-text">대기 중</div>
+            </div>
+
+            <div class="inv-toolbar">
+              <label class="field">
+                <span class="field__label">품목</span>
+                <input id="in-fish" class="field__input" type="text" placeholder="예: 고등어" />
+              </label>
+              <label class="field">
+                <span class="field__label">규격/크기</span>
+                <input id="in-size" class="field__input" type="text" placeholder="예: 대/중/소" />
+              </label>
+              <label class="field">
+                <span class="field__label">수량</span>
+                <input id="in-qty" class="field__input" type="number" step="0.01" placeholder="예: 10" />
+              </label>
+              <label class="field">
+                <span class="field__label">단가</span>
+                <input id="in-unit" class="field__input" type="number" step="0.01" placeholder="예: 12000" />
+              </label>
+
+              <button id="btn-add" class="btn btn--primary" type="button">추가</button>
+              <button id="btn-save-all" class="btn btn--ghost" type="button">일괄 저장</button>
+              <button id="btn-reload" class="btn btn--ghost" type="button">새로고침</button>
+
+              <div class="inv-toolbar__right">
+                <span id="dirty-count" class="dirty-count"></span>
+
+                <label class="autosave">
+                  <input id="chk-autosave" type="checkbox" />
+                  <span>자동저장</span>
+                </label>
+
+                <select id="sel-autosave-min" class="field__select autosave__select">
+                  <option value="10">10분</option>
+                  <option value="30" selected>30분</option>
+                  <option value="60">60분</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;"></th>
+                    <th>품목</th>
+                    <th>규격</th>
+                    <th class="t-right">수량</th>
+                    <th class="t-right">단가</th>
+                    <th class="t-right">금액</th>
+                    <th class="t-right" style="width:160px;">작업</th>
+                  </tr>
+                </thead>
+                <tbody id="inv-body">
+                  <!-- script.js가 채움 -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Other pages -->
+        <section class="page is-hidden" data-page-view="history">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">입출고이력</h1>
+              <p class="page-subtitle">추후 거래 로그 테이블을 여기에 배치하세요.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="padding:14px;color:#6b7785;">(준비중)</div>
+          </div>
+        </section>
+
+        <section class="page is-hidden" data-page-view="items">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">품목관리</h1>
+              <p class="page-subtitle">품목 마스터(단위/안전재고 등)를 관리합니다.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="padding:14px;color:#6b7785;">(준비중)</div>
+          </div>
+        </section>
+
+        <section class="page is-hidden" data-page-view="settings">
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">설정</h1>
+              <p class="page-subtitle">시스템 설정을 관리합니다.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="padding:14px;color:#6b7785;">(준비중)</div>
+          </div>
+        </section>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Popup overlay -->
+  <div id="popup-overlay" hidden class="popup-overlay">
+    <div class="popup-box">
+      <div class="popup-head">
+        <div id="popup-title" class="popup-title">알림</div>
+        <button id="popup-close" class="icon-btn" type="button" aria-label="닫기">✕</button>
+      </div>
+      <div class="popup-body">
+        <pre id="popup-message" class="popup-message"></pre>
+      </div>
+      <div class="popup-actions">
+        <button id="popup-ok" class="btn btn--primary" type="button">확인</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- JS -->
-<script src="js/config.js"></script>
-<script src="js/util.js"></script>
-<script src="js/app.js"></script>
+  <!-- ✅ 중요: 로드 순서 (config → util → script) -->
+  <script src="js/config.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>
