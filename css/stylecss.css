@@ -199,3 +199,7 @@ tbody tr:hover{ background:rgba(0,0,0,.02); }
   justify-content:flex-end;
   gap:10px;
 }
+
+.popup-overlay[hidden]{
+  display:none !important;
+}
